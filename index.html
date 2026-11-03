@@ -126,7 +126,7 @@
             </nav>
 
             <div class="p-4 border-t border-slate-800 text-xs text-center space-y-2 text-slate-400">
-                <p>Personal Duty Log v11.3</p>
+                <p>Personal Duty Log v11.4</p>
                 <div class="flex gap-2 justify-center">
                     <button onclick="exportData()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-teal-400 hover:bg-slate-800">Export Backup</button>
                     <button onclick="document.getElementById('importFile').click()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-amber-400 hover:bg-slate-800">Import</button>
@@ -272,7 +272,7 @@
                     </div>
 
                     <!-- Cumulative Tally Summary Cards -->
-                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
                             <p class="text-[10px] font-semibold text-slate-400 uppercase">NSD</p>
                             <p class="text-lg font-bold text-teal-300 mt-1" id="totalNSD">0</p>
@@ -289,9 +289,13 @@
                             <p class="text-[10px] font-semibold text-slate-400 uppercase">Major</p>
                             <p class="text-lg font-bold text-rose-300 mt-1" id="totalMajor">0</p>
                         </div>
-                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center col-span-2 sm:col-span-1">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
                             <p class="text-[10px] font-semibold text-slate-400 uppercase">Minor</p>
                             <p class="text-lg font-bold text-sky-300 mt-1" id="totalMinor">0</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center col-span-2 sm:col-span-1">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Circulating</p>
+                            <p class="text-lg font-bold text-indigo-300 mt-1" id="totalCirculating">0</p>
                         </div>
                     </div>
 
@@ -302,7 +306,7 @@
                             <input type="date" id="tallyDate" required class="w-full sm:w-1/2 p-2.5 border rounded-lg outline-none">
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
                             <div>
                                 <label class="text-xs font-semibold block mb-1 text-slate-300">NSD</label>
                                 <input type="number" id="tallyNSD" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
@@ -322,6 +326,10 @@
                             <div>
                                 <label class="text-xs font-semibold block mb-1 text-slate-300">Minor</label>
                                 <input type="number" id="tallyMinor" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Circulating</label>
+                                <input type="number" id="tallyCirculating" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
                             </div>
                         </div>
 
@@ -804,7 +812,8 @@
                 cord: parseInt(document.getElementById('tallyCord').value) || 0,
                 cs: parseInt(document.getElementById('tallyCS').value) || 0,
                 major: parseInt(document.getElementById('tallyMajor').value) || 0,
-                minor: parseInt(document.getElementById('tallyMinor').value) || 0
+                minor: parseInt(document.getElementById('tallyMinor').value) || 0,
+                circulating: parseInt(document.getElementById('tallyCirculating').value) || 0
             };
 
             appData.tallies.unshift(newTally);
@@ -815,6 +824,7 @@
             document.getElementById('tallyCS').value = 0;
             document.getElementById('tallyMajor').value = 0;
             document.getElementById('tallyMinor').value = 0;
+            document.getElementById('tallyCirculating').value = 0;
 
             renderTallies();
         }
@@ -837,13 +847,14 @@
             const container = document.getElementById('tallyHistoryContainer');
             if (!container) return;
 
-            let sumNSD = 0, sumCord = 0, sumCS = 0, sumMajor = 0, sumMinor = 0;
+            let sumNSD = 0, sumCord = 0, sumCS = 0, sumMajor = 0, sumMinor = 0, sumCirculating = 0;
             appData.tallies.forEach(t => {
                 sumNSD += t.nsd;
                 sumCord += t.cord;
                 sumCS += t.cs;
                 sumMajor += t.major;
                 sumMinor += t.minor;
+                sumCirculating += (t.circulating || 0);
             });
 
             document.getElementById('totalNSD').innerText = sumNSD;
@@ -851,6 +862,7 @@
             document.getElementById('totalCS').innerText = sumCS;
             document.getElementById('totalMajor').innerText = sumMajor;
             document.getElementById('totalMinor').innerText = sumMinor;
+            document.getElementById('totalCirculating').innerText = sumCirculating;
 
             if (appData.tallies.length === 0) {
                 container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No procedure tallies logged yet.</div>`;
@@ -867,6 +879,7 @@
                             <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">CS: <strong>${t.cs}</strong></span>
                             <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Major: <strong>${t.major}</strong></span>
                             <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Minor: <strong>${t.minor}</strong></span>
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Circulating: <strong>${t.circulating || 0}</strong></span>
                         </div>
                     </div>
                     <button onclick="deleteTally(${t.id})" class="text-xs text-red-400 hover:text-red-300 self-end sm:self-center">Delete</button>

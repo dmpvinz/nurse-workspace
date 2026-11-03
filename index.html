@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nurse Personal Record & Workspace</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS Styles (Slate Dark Pro Locked) -->
+    <style>
+        button, select, input {
+            touch-action: manipulation;
+        }
+        
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+        
+        .drawer-slide {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* SLATE DARK PRO THEME */
+        body { background-color: #0b0f19; color: #f1f5f9; }
+        header { background-color: #0f172a; border-bottom: 1px solid #1e293b; }
+        aside { background-color: #090d16; border-right: 1px solid #1e293b; }
+        .card, .bg-white { background-color: #111827 !important; border: 1px solid #1f2937 !important; color: #f9fafb !important; }
+        input, select, textarea { background-color: #1f2937 !important; color: #ffffff !important; border-color: #374151 !important; }
+        input::placeholder, textarea::placeholder { color: #9ca3af !important; }
+        h1, h2, h3, label, span { color: #f3f4f6 !important; }
+        table th { background-color: #1f2937 !important; color: #e5e7eb !important; }
+        table td { border-color: #1f2937 !important; color: #f3f4f6 !important; }
+
+        @media print {
+            header, #sidebar, #mobileHeader, .fab-button, button, input, select, .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            .view-section {
+                display: block !important;
+            }
+            .card, .print-card {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased flex flex-col min-h-screen" id="appBody">
+
+    <!-- Hidden File Input for Local Storage Photo Upload -->
+    <input type="file" id="profileImageInput" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+
+    <!-- TOP HEADER -->
+    <header id="mobileHeader" class="p-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-800/50 focus:outline-none font-bold text-xl text-white">
+                ☰
+            </button>
+            <h1 class="text-lg font-bold tracking-wide text-white">Nurse Workspace</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="text-xs bg-teal-900/60 text-teal-300 border border-teal-700 px-2.5 py-1 rounded font-mono hidden sm:inline" id="currentDutyBadge">ON DUTY</span>
+        </div>
+    </header>
+
+    <!-- Sidebar Backdrop Overlay -->
+    <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity"></div>
+
+    <div class="flex flex-1 relative overflow-hidden">
+        
+        <!-- SLIDE-OUT DRAWER NAVIGATION -->
+        <aside id="sidebar" class="drawer-slide fixed top-0 left-0 bottom-0 w-72 z-50 -translate-x-full flex flex-col shadow-2xl">
+            <div class="p-5 flex justify-between items-center border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div onclick="triggerPhotoUpload()" class="relative group cursor-pointer" title="Tap to change profile picture">
+                        <div id="sidebarAvatar" class="w-11 h-11 rounded-full bg-teal-600 text-white flex items-center justify-center font-extrabold text-lg shadow-inner border border-teal-400/30 overflow-hidden bg-cover bg-center">
+                            MK
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold leading-tight text-white" id="sidebarNurseName">Ma. Kaye Ann Escondo, RN</h2>
+                        <p class="text-xs text-teal-400">Lic. No: 1094092</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="p-1 font-bold text-xl text-slate-400 hover:text-white">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <button onclick="switchView('home')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-teal-400 bg-slate-800/80 font-medium" data-target="home">
+                    <span>Home & Profile</span>
+                </button>
+                <button onclick="switchView('notes')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="notes">
+                    <span>Shift Notes & Handover</span>
+                </button>
+                <button onclick="switchView('tasks')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="tasks">
+                    <span>Priority Tasks</span>
+                    <span id="taskBadge" class="bg-amber-500 text-slate-950 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="switchView('calendar')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="calendar">
+                    <span>Shift Schedule</span>
+                </button>
+                <button onclick="switchView('vitals')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="vitals">
+                    <span>Calculators</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800 text-xs text-center space-y-2 text-slate-400">
+                <p>Personal Duty Log v9.7</p>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="exportData()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-teal-400 hover:bg-slate-800">Export Backup</button>
+                    <button onclick="document.getElementById('importFile').click()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-amber-400 hover:bg-slate-800">Import</button>
+                    <input type="file" id="importFile" onchange="importData(event)" class="hidden" accept=".json">
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="flex-1 p-4 md:p-6 overflow-y-auto max-w-5xl mx-auto w-full pb-20">
+
+            <!-- 1. HOME & PROFILE VIEW -->
+            <section id="view-home" class="view-section space-y-6">
+                <!-- TOP PROFILE HEADER CARD -->
+                <div class="card rounded-2xl shadow-lg p-6 relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                        <div class="flex items-center space-x-4">
+                            <!-- Tap DP to upload -->
+                            <div onclick="triggerPhotoUpload()" class="relative group cursor-pointer" title="Tap to change profile picture">
+                                <div id="mainProfileAvatar" class="w-20 h-20 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-inner border-2 border-teal-400/40 overflow-hidden bg-cover bg-center">
+                                    MK
+                                </div>
+                                <div class="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-[10px] font-bold text-white text-center p-1">
+                                    Tap to Edit
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white" id="profileNameDisplay">Ma. Kaye Ann Aquino Escondo, RN</h2>
+                                    <span id="dutyStatusPill" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                        ON DUTY
+                                    </span>
+                                </div>
+                                <p class="text-xs text-teal-400 font-medium mt-0.5">BSN, RN — Maternity Nurse | Lic. No: 1094092</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Labor & Delivery Suite | Delivery Room</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <button onclick="switchView('vitals')" class="flex-1 md:flex-none text-xs font-semibold px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md transition text-center">
+                                Open Calculators
+                            </button>
+                            <button onclick="toggleDutyStatus()" id="statusToggleBtn" class="flex-1 md:flex-none text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition text-center">
+                                Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACCURATE WEATHER & COMMUTE ALERT WIDGET (ROXAS, ORIENTAL MINDORO) -->
+                <div class="card p-4 rounded-2xl shadow-md border border-slate-800 relative overflow-hidden">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🌧️</span>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-teal-400">Shift Weather & Commute — Roxas, Oriental Mindoro</h3>
+                        </div>
+                        <span id="weatherTimeBadge" class="text-[10px] font-mono text-slate-400">Live Forecast</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-medium">Condition</p>
+                                <p class="font-bold text-white text-sm" id="weatherCond">Light Rain</p>
+                            </div>
+                            <span class="text-2xl">🌧️</span>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-medium">Temperature</p>
+                                <p class="font-bold text-teal-300 text-sm" id="weatherTemp">31°C</p>
+                            </div>
+                            <span class="text-2xl">🌡️</span>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex flex-col justify-center">
+                            <p class="text-[10px] text-slate-400 font-medium font-semibold">Commute Alert</p>
+                            <p class="font-semibold text-amber-400 text-[11px] mt-0.5" id="weatherTip">Light rain in Roxas — bring wet weather gear for duty commute.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Shift Progress & Countdown Timer -->
+                <div class="card p-5 rounded-xl shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700/50 pb-3 gap-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Live Shift Progress & Handover Countdown</h3>
+                            <p class="text-xs text-slate-400">Track remaining shift duration and milestone timing.</p>
+                        </div>
+                        <div id="shiftCountdownBadge" class="font-mono font-bold text-xs px-3 py-1 rounded-lg border border-teal-800 bg-teal-950/40 text-teal-300">
+                            Time Left: --:--:--
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold text-slate-400">
+                            <span>Shift Start (07:00 AM)</span>
+                            <span id="shiftProgressPercent" class="text-slate-200">0% Completed</span>
+                            <span>Shift End (07:00 PM)</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                            <div id="shiftProgressBar" class="bg-teal-500 h-full w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. SHIFT NOTES VIEW -->
+            <section id="view-notes" class="view-section space-y-6 hidden">
+                <div class="card p-4 rounded-xl shadow-sm space-y-4">
+                    <h3 class="text-base font-bold text-white">Log New Patient Entry / Handover</h3>
+                    <form id="noteForm" onsubmit="saveNote(event)" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Patient Initials / ID</label>
+                                <input type="text" id="notePatient" required placeholder="e.g., J.D." class="w-full mt-1 p-2.5 border rounded-lg outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Bed / Room No.</label>
+                                <input type="text" id="noteRoom" required placeholder="e.g., Labor Room 2 / DR-1" class="w-full mt-1 p-2.5 border rounded-lg outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold block mb-1 text-slate-300">Care Details & Clinical Remarks</label>
+                            <textarea id="noteDetails" rows="3" required placeholder="Enter notes..." class="w-full mt-1 p-2.5 border rounded-lg outline-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-500 transition">
+                            Save Note Record
+                        </button>
+                    </form>
+                </div>
+                <div id="notesContainer" class="space-y-3"></div>
+            </section>
+
+            <!-- 3. PRIORITY TASKS VIEW -->
+            <section id="view-tasks" class="view-section space-y-6 hidden">
+                <div class="card p-4 rounded-xl shadow-sm space-y-4">
+                    <h3 class="text-base font-bold text-white">Add Duty Task</h3>
+                    
+                    <!-- One-Tap Quick Presets -->
+                    <div>
+                        <p class="text-xs text-slate-400 mb-2 font-medium">⚡ Quick Presets (Tap to Add Instantly):</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button onclick="addPresetTask('Medication Pass', 'ROUTINE')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition">
+                                + Med Pass
+                            </button>
+                            <button onclick="addPresetTask('Vitals Signs Round', 'ROUTINE')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition">
+                                + Vitals Check
+                            </button>
+                            <button onclick="addPresetTask('Oxytocin Drip Monitor', 'STAT')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 transition">
+                                + Oxytocin Drip
+                            </button>
+                            <button onclick="addPresetTask('Delivery Room Instrument Setup', 'STAT')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition">
+                                + DR Setup
+                            </button>
+                            <button onclick="addPresetTask('IV Line Flush / Setup', 'ROUTINE')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition">
+                                + IV Line Flush
+                            </button>
+                            <button onclick="addPresetTask('OB Rounds Assistance', 'ROUTINE')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition">
+                                + OB Rounds
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="taskForm" onsubmit="saveTask(event)" class="flex gap-2">
+                        <input type="text" id="taskInput" required placeholder="Or type a custom task..." class="flex-1 p-2.5 border rounded-lg outline-none">
+                        <select id="taskPriority" class="p-2.5 border rounded-lg text-xs font-bold outline-none">
+                            <option value="STAT">STAT</option>
+                            <option value="ROUTINE" selected>Routine</option>
+                        </select>
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 rounded-lg transition">Add</button>
+                    </form>
+                </div>
+
+                <div class="card rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-3 border-b border-slate-800 flex justify-between items-center">
+                        <h3 class="text-xs font-bold uppercase text-slate-300">Current Shift Checklist</h3>
+                        <button onclick="clearCompletedTasks()" class="text-xs text-slate-400 hover:text-red-400">Clear Done</button>
+                    </div>
+                    <ul id="taskList" class="divide-y divide-slate-800"></ul>
+                </div>
+            </section>
+
+            <!-- 4. INTERACTIVE SHIFT SCHEDULE VIEW -->
+            <section id="view-calendar" class="view-section space-y-6 hidden">
+                <div class="card p-4 rounded-xl shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-base font-bold text-white">Monthly Shift Roster</h3>
+                            <p class="text-xs text-slate-400">Click any day to assign a shift status or edit shift details.</p>
+                        </div>
+                        <div class="flex space-x-3 text-xs">
+                            <span class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span><span class="text-slate-300">Yellow (Active Duty)</span></span>
+                            <span class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span><span class="text-slate-300">Green (Completed / Off)</span></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 mb-2">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+                </div>
+
+                <div id="shiftModal" class="card p-4 rounded-xl shadow-lg border border-teal-700/50 hidden space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-teal-400" id="modalDayTitle">Edit Shift for Day</h4>
+                        <button onclick="closeShiftModal()" class="text-xs text-slate-400 hover:text-white font-bold">✕</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block mb-1 text-slate-300 font-semibold">Shift Color / Status</label>
+                            <select id="shiftColorSelect" class="w-full p-2 border rounded outline-none font-bold">
+                                <option value="none">None (Default Slate)</option>
+                                <option value="yellow" class="bg-amber-950 text-amber-300">🟨 Yellow (Active Duty / Scheduled)</option>
+                                <option value="green" class="bg-emerald-950 text-emerald-300">🟩 Green (Completed / Off Duty)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-slate-300 font-semibold">Shift Info / Remarks</label>
+                            <input type="text" id="shiftInfoInput" placeholder="e.g., Labor Room / Delivery Room" class="w-full p-2 border rounded outline-none">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button onclick="clearDayShift()" class="px-3 py-1.5 rounded text-xs bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700">Clear Day</button>
+                        <button onclick="saveDayShift()" class="px-4 py-1.5 rounded text-xs bg-teal-600 hover:bg-teal-500 text-white font-bold shadow">Save Shift Info</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. CALCULATORS VIEW -->
+            <section id="view-vitals" class="view-section space-y-6 hidden">
+                <div class="card p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="text-base font-bold text-white">Calculators</h3>
+                    <p class="text-xs text-slate-400">Specialized Maternity suite tools, emergency dosing, fluid balance, and clinical calculators.</p>
+                </div>
+
+                <!-- Maternity Suite Tools -->
+                <div class="card p-4 rounded-xl shadow-sm border border-teal-700/50 space-y-4">
+                    <h4 class="text-sm font-bold text-teal-300">Maternity</h4>
+
+                    <!-- APGAR Score Calculator -->
+                    <div class="space-y-3 pt-2 border-t border-slate-800">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-white">Newborn APGAR Score Assessment</span>
+                            <span id="apgarTotalBadge" class="text-xs font-mono font-bold px-2.5 py-1 rounded bg-teal-950 text-teal-300 border border-teal-800">Total: 0 / 10</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Appearance</label>
+                                <select id="apgarA" onchange="calculateApgar()" class="w-full p-2 border rounded">
+                                    <option value="0">0 - Pale</option>
+                                    <option value="1">1 - Extremities blue</option>
+                                    <option value="2" selected>2 - Pink</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Pulse</label>
+                                <select id="apgarP" onchange="calculateApgar()" class="w-full p-2 border rounded">
+                                    <option value="0">0 - Absent</option>
+                                    <option value="1">1 - Below 100</option>
+                                    <option value="2" selected>2 - Above 100</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Grimace</label>
+                                <select id="apgarG" onchange="calculateApgar()" class="w-full p-2 border rounded">
+                                    <option value="0">0 - None</option>
+                                    <option value="1">1 - Grimace</option>
+                                    <option value="2" selected>2 - Cry</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Activity</label>
+                                <select id="apgarAc" onchange="calculateApgar()" class="w-full p-2 border rounded">
+                                    <option value="0">0 - Limp</option>
+                                    <option value="1">1 - Some flexion</option>
+                                    <option value="2" selected>2 - Active</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Respiration</label>
+                                <select id="apgarR" onchange="calculateApgar()" class="w-full p-2 border rounded">
+                                    <option value="0">0 - Absent</option>
+                                    <option value="1">1 - Slow/weak</option>
+                                    <option value="2" selected>2 - Good/crying</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="apgarInterpretation" class="p-2.5 rounded bg-slate-900 border border-slate-800 text-xs font-mono text-teal-300">
+                            Status: Vigorous Newborn (Normal Transition)
+                        </div>
+                    </div>
+
+                    <!-- Obstetric Hemorrhage Estimator -->
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <h5 class="text-xs font-bold text-rose-400">Postpartum / Delivery Hemorrhage Estimator</h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Estimated Blood Loss (mL)</label>
+                                <input type="number" id="obEBL" placeholder="e.g. 800" class="w-full p-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-300">Amniotic/Irrigation Deduct (mL)</label>
+                                <input type="number" id="obDeduct" placeholder="e.g. 300" class="w-full p-2 border rounded">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="calculateOBHemorrhage()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded transition">
+                                    Calculate Net EBL
+                                </button>
+                            </div>
+                        </div>
+                        <div id="obHemorrhageResult" class="p-3 rounded text-xs hidden space-y-1 border border-rose-900/60 bg-rose-950/30 text-rose-200 font-mono"></div>
+                    </div>
+
+                    <!-- Delivery Room Verification Checklist -->
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <h5 class="text-xs font-bold text-amber-400">Delivery Room Instrument & Sponge Verification</h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <label class="flex items-center space-x-2 p-2 rounded bg-slate-900 border border-slate-800 cursor-pointer">
+                                <input type="checkbox" id="chkSponges" class="w-4 h-4 text-teal-600 rounded">
+                                <span class="text-slate-200 font-semibold">Sponges Verified</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-2 rounded bg-slate-900 border border-slate-800 cursor-pointer">
+                                <input type="checkbox" id="chkInstruments" class="w-4 h-4 text-teal-600 rounded">
+                                <span class="text-slate-200 font-semibold">Instruments Counted</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-2 rounded bg-slate-900 border border-slate-800 cursor-pointer">
+                                <input type="checkbox" id="chkSharps" class="w-4 h-4 text-teal-600 rounded">
+                                <span class="text-slate-200 font-semibold">Sharps Accounted For</span>
+                            </label>
+                        </div>
+                        <button onclick="saveORChecklist()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs transition">
+                            Confirm Delivery Room Verification
+                        </button>
+                        <p id="orLogStatus" class="text-[11px] font-mono text-emerald-400 text-center hidden">✓ Delivery Room safety verification logged successfully.</p>
+                    </div>
+                </div>
+
+                <!-- Emergency CPR & Code Dosing -->
+                <div class="card p-4 rounded-xl shadow-sm border border-rose-900/40">
+                    <h3 class="text-sm font-bold text-rose-400 mb-3">Emergency Code Dosing Quick-Reference</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-3">
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">Patient Type & Weight</label>
+                            <div class="flex gap-2">
+                                <select id="codePatientType" onchange="toggleCodeWeightInput()" class="p-2 border rounded font-bold w-1/2">
+                                    <option value="adult">Adult (Standard)</option>
+                                    <option value="peds">Pediatric (Weight-based)</option>
+                                </select>
+                                <input type="number" id="codeWeight" placeholder="Weight (kg)" class="p-2 border rounded w-1/2 hidden">
+                            </div>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="calculateCodeDoses()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded transition">
+                                Calculate Code Doses
+                            </button>
+                        </div>
+                    </div>
+                    <div id="codeResult" class="p-3 rounded text-xs space-y-2 border border-rose-900/60 bg-rose-950/30 text-rose-200">
+                        <div class="font-bold border-b border-rose-800 pb-1">ACLS / PALS Quick Reference:</div>
+                        <ul class="space-y-1 text-[11px] font-mono">
+                            <li>• <strong>Epinephrine (1:10,000):</strong> 1 mg IV/IO push q3-5min</li>
+                            <li>• <strong>Amiodarone:</strong> 300 mg IV push 1st dose; 150 mg 2nd dose</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Fluid Balance Tracker -->
+                <div class="card p-4 rounded-xl shadow-sm">
+                    <h3 class="text-sm font-bold text-teal-400 mb-3">Fluid Balance (Ins & Outs)</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">Crystalloids / Colloids (mL)</label>
+                            <input type="number" id="fluidIV" placeholder="e.g. 1500" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">Blood Products (mL)</label>
+                            <input type="number" id="fluidBlood" placeholder="e.g. 350" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">EBL / Blood Loss (mL)</label>
+                            <input type="number" id="fluidEBL" placeholder="e.g. 400" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">Urine / Drain Output (mL)</label>
+                            <input type="number" id="fluidOutput" placeholder="e.g. 600" class="w-full p-2 border rounded">
+                        </div>
+                    </div>
+                    <button onclick="calculateFluidBalance()" class="w-full mt-3 bg-teal-600 text-white font-bold py-2 rounded hover:bg-teal-500 transition text-xs">
+                        Calculate Net Fluid Balance
+                    </button>
+                    <div id="fluidResult" class="mt-3 p-3 rounded text-xs hidden space-y-1 border border-teal-800 bg-teal-950/30 text-teal-200 font-mono"></div>
+                </div>
+
+                <!-- ABG Analyzer -->
+                <div class="card p-4 rounded-xl shadow-sm">
+                    <h3 class="text-sm font-bold text-teal-400 mb-3">ABG (Arterial Blood Gas) Analyzer</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">pH Level (Normal: 7.35–7.45)</label>
+                            <input type="number" step="0.01" id="abgPH" placeholder="e.g. 7.28" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">PaCO2 mmHg (Normal: 35–45)</label>
+                            <input type="number" id="abgPACO2" placeholder="e.g. 52" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1 text-slate-300">HCO3 mEq/L (Normal: 22–26)</label>
+                            <input type="number" id="abgHCO3" placeholder="e.g. 24" class="w-full p-2 border rounded">
+                        </div>
+                    </div>
+                    <button onclick="calculateABG()" class="w-full mt-3 bg-teal-600 text-white font-bold py-2 rounded hover:bg-teal-500 transition text-xs">
+                        Analyze Acid-Base Status
+                    </button>
+                    <div id="abgResult" class="mt-3 p-3 rounded text-xs hidden space-y-1 border border-teal-800 bg-teal-950/30 text-teal-200"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let appData = {
+            notes: JSON.parse(localStorage.getItem('nurse_notes')) || [],
+            tasks: JSON.parse(localStorage.getItem('nurse_tasks')) || [],
+            dutyStatus: localStorage.getItem('nurse_duty_status') || 'ON DUTY',
+            shifts: JSON.parse(localStorage.getItem('nurse_shifts')) || {},
+            profileImage: localStorage.getItem('nurse_profile_image') || null
+        };
+
+        let selectedDay = null;
+
+        function triggerPhotoUpload() {
+            document.getElementById('profileImageInput').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    appData.profileImage = base64Image;
+                    localStorage.setItem('nurse_profile_image', base64Image);
+                    renderProfileImage();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderProfileImage() {
+            const mainAvatar = document.getElementById('mainProfileAvatar');
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+
+            if (appData.profileImage) {
+                if (mainAvatar) {
+                    mainAvatar.style.backgroundImage = `url('${appData.profileImage}')`;
+                    mainAvatar.innerText = '';
+                }
+                if (sidebarAvatar) {
+                    sidebarAvatar.style.backgroundImage = `url('${appData.profileImage}')`;
+                    sidebarAvatar.innerText = '';
+                }
+            }
+        }
+
+        /* --- APGAR CALCULATOR LOGIC --- */
+        function calculateApgar() {
+            const a = parseInt(document.getElementById('apgarA').value);
+            const p = parseInt(document.getElementById('apgarP').value);
+            const g = parseInt(document.getElementById('apgarG').value);
+            const ac = parseInt(document.getElementById('apgarAc').value);
+            const r = parseInt(document.getElementById('apgarR').value);
+
+            const total = a + p + g + ac + r;
+            const badge = document.getElementById('apgarTotalBadge');
+            const interp = document.getElementById('apgarInterpretation');
+
+            if (badge) badge.innerText = `Total: ${total} / 10`;
+
+            let text = "";
+            if (total >= 7) {
+                text = "Status: Vigorous Newborn (Normal Transition / Routine Care)";
+            } else if (total >= 4) {
+                text = "Status: Moderately Depressed (Needs stimulation, oxygen/resuscitation support)";
+            } else {
+                text = "Status: Severely Depressed (STAT Neonatal Resuscitation Required)";
+            }
+            if (interp) interp.innerText = text;
+        }
+
+        /* --- OB HEMORRHAGE LOGIC --- */
+        function calculateOBHemorrhage() {
+            const ebl = parseFloat(document.getElementById('obEBL').value) || 0;
+            const deduct = parseFloat(document.getElementById('obDeduct').value) || 0;
+            const net = Math.max(0, ebl - deduct);
+
+            const res = document.getElementById('obHemorrhageResult');
+            let alertText = "";
+            if (net > 1000) {
+                alertText = "⚠️ CRITICAL: Obstetric Hemorrhage Alert (>1000 mL). Activate Massive Transfusion Protocol (MTP), notify OB and Anesthesia immediately.";
+            } else if (net > 500) {
+                alertText = "⚡ CAUTION: EBL exceeds normal vaginal limit (>500 mL). Monitor vital signs and uterotonics closely.";
+            } else {
+                alertText = "✓ EBL within standard postpartum parameters.";
+            }
+
+            if (res) {
+                res.innerHTML = `
+                    <div><strong>Gross EBL:</strong> ${ebl} mL</div>
+                    <div><strong>Amniotic / Irrigation Deduct:</strong> ${deduct} mL</div>
+                    <div class="mt-1 pt-1 border-t border-rose-800 font-bold">Net Blood Loss: ${net} mL</div>
+                    <div class="mt-2 text-[11px] font-sans">${alertText}</div>
+                `;
+                res.classList.remove('hidden');
+            }
+        }
+
+        function saveORChecklist() {
+            const s = document.getElementById('chkSponges').checked;
+            const i = document.getElementById('chkInstruments').checked;
+            const sh = document.getElementById('chkSharps').checked;
+            const status = document.getElementById('orLogStatus');
+
+            if (s && i && sh) {
+                if (status) {
+                    status.innerText = "✓ Delivery Room Verification Logged Successfully!";
+                    status.classList.remove('hidden');
+                }
+            } else {
+                alert("Please check all verification boxes to complete the count protocol.");
+            }
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) targetView.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.target === viewId) {
+                    btn.classList.add('bg-slate-800', 'text-teal-400');
+                    btn.classList.remove('text-slate-300');
+                } else {
+                    btn.classList.remove('bg-slate-800', 'text-teal-400');
+                    btn.classList.add('text-slate-300');
+                }
+            });
+
+            closeSidebar();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.toggle('-translate-x-full');
+            if (backdrop) backdrop.classList.toggle('hidden');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.add('-translate-x-full');
+            if (backdrop) backdrop.classList.add('hidden');
+        }
+
+        function toggleDutyStatus() {
+            appData.dutyStatus = (appData.dutyStatus === 'ON DUTY') ? 'OFF DUTY' : 'ON DUTY';
+            localStorage.setItem('nurse_duty_status', appData.dutyStatus);
+            updateDutyUI();
+        }
+
+        function updateDutyUI() {
+            const pill = document.getElementById('dutyStatusPill');
+            const badge = document.getElementById('currentDutyBadge');
+            
+            if (pill) {
+                pill.innerText = appData.dutyStatus;
+                if (appData.dutyStatus === 'ON DUTY') {
+                    pill.className = "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                } else {
+                    pill.className = "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                }
+            }
+            if (badge) {
+                badge.innerText = appData.dutyStatus;
+            }
+        }
+
+        function updateShiftTimer() {
+            const now = new Date();
+            const shiftStart = new Date();
+            shiftStart.setHours(7, 0, 0, 0);
+            const shiftEnd = new Date();
+            shiftEnd.setHours(19, 0, 0, 0);
+
+            const totalTime = shiftEnd - shiftStart;
+            const elapsed = now - shiftStart;
+            const remaining = shiftEnd - now;
+
+            if (remaining > 0) {
+                const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                
+                const badge = document.getElementById('shiftCountdownBadge');
+                if (badge) badge.innerText = `Time Left: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                let percent = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
+                const bar = document.getElementById('shiftProgressBar');
+                const percentText = document.getElementById('shiftProgressPercent');
+                if (bar) bar.style.width = `${percent}%`;
+                if (percentText) percentText.innerText = `${Math.round(percent)}% Completed`;
+            }
+        }
+
+        /* --- EMERGENCY CODE DOSING LOGIC --- */
+        function toggleCodeWeightInput() {
+            const type = document.getElementById('codePatientType').value;
+            const wInput = document.getElementById('codeWeight');
+            if (type === 'peds') {
+                wInput.classList.remove('hidden');
+            } else {
+                wInput.classList.add('hidden');
+            }
+        }
+
+        function calculateCodeDoses() {
+            const type = document.getElementById('codePatientType').value;
+            const res = document.getElementById('codeResult');
+            
+            if (type === 'adult') {
+                res.innerHTML = `
+                    <div class="font-bold border-b border-rose-800 pb-1">Adult ACLS Dosing Summary:</div>
+                    <ul class="space-y-1 text-[11px] font-mono mt-1">
+                        <li>• <strong>Epinephrine (1:10,000):</strong> 1 mg IV/IO push q3-5min</li>
+                        <li>• <strong>Amiodarone:</strong> 300 mg IV push 1st dose; 150 mg 2nd dose</li>
+                    </ul>
+                `;
+            } else {
+                const w = parseFloat(document.getElementById('codeWeight').value);
+                if (!w) {
+                    res.innerHTML = `<div class="text-rose-400 font-bold">Please enter child weight in kg.</div>`;
+                    return;
+                }
+                const epiMg = (w * 0.01).toFixed(2);
+                const amioMg = (w * 5).toFixed(1);
+
+                res.innerHTML = `
+                    <div class="font-bold border-b border-rose-800 pb-1">Pediatric PALS Dosing (${w} kg):</div>
+                    <ul class="space-y-1 text-[11px] font-mono mt-1">
+                        <li>• <strong>Epinephrine (1:10,000):</strong> ${epiMg} mg IV/IO q3-5min</li>
+                        <li>• <strong>Amiodarone:</strong> ${amioMg} mg IV/IO push (5 mg/kg)</li>
+                    </ul>
+                `;
+            }
+        }
+
+        /* --- FLUID BALANCE CALCULATOR LOGIC --- */
+        function calculateFluidBalance() {
+            const iv = parseFloat(document.getElementById('fluidIV').value) || 0;
+            const blood = parseFloat(document.getElementById('fluidBlood').value) || 0;
+            const ebl = parseFloat(document.getElementById('fluidEBL').value) || 0;
+            const out = parseFloat(document.getElementById('fluidOutput').value) || 0;
+
+            const totalIn = iv + blood;
+            const totalOut = ebl + out;
+            const net = totalIn - totalOut;
+
+            const res = document.getElementById('fluidResult');
+            res.innerHTML = `
+                <div><strong>Total Intake:</strong> ${totalIn} mL</div>
+                <div><strong>Total Output:</strong> ${totalOut} mL</div>
+                <div class="mt-1 pt-1 border-t border-teal-800 font-bold ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                    Net Fluid Balance: ${net >= 0 ? '+' + net : net} mL
+                </div>
+            `;
+            res.classList.remove('hidden');
+        }
+
+        /* --- ABG ANALYZER LOGIC --- */
+        function calculateABG() {
+            const ph = parseFloat(document.getElementById('abgPH').value);
+            const paco2 = parseFloat(document.getElementById('abgPACO2').value);
+            const hco3 = parseFloat(document.getElementById('abgHCO3').value);
+
+            const res = document.getElementById('abgResult');
+            if (!ph || !paco2 || !hco3) {
+                res.innerHTML = `<div class="text-rose-400">Please enter pH, PaCO2, and HCO3 values.</div>`;
+                res.classList.remove('hidden');
+                return;
+            }
+
+            let primary = "";
+            if (ph < 7.35) {
+                if (paco2 > 45) primary = "Respiratory Acidosis";
+                else if (hco3 < 22) primary = "Metabolic Acidosis";
+                else primary = "Unclassified Acidosis";
+            } else if (ph > 7.45) {
+                if (paco2 < 35) primary = "Respiratory Alkalosis";
+                else if (hco3 > 26) primary = "Metabolic Alkalosis";
+                else primary = "Unclassified Alkalosis";
+            } else {
+                primary = "Normal / Fully Compensated Acid-Base Status";
+            }
+
+            res.innerHTML = `
+                <div class="font-bold border-b border-teal-800 pb-1 text-teal-300">ABG Interpretation:</div>
+                <div class="mt-1 text-slate-200"><strong>Primary Disorder:</strong> ${primary}</div>
+            `;
+            res.classList.remove('hidden');
+        }
+
+        /* --- SHIFT CALENDAR LOGIC --- */
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            for(let day = 1; day <= 31; day++) {
+                const shiftData = appData.shifts[day] || { color: 'none', info: '' };
+                
+                let colorClasses = "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800/80";
+                if (shiftData.color === 'yellow') {
+                    colorClasses = "bg-amber-950/70 border-amber-500/60 text-amber-200 hover:bg-amber-900/80";
+                } else if (shiftData.color === 'green') {
+                    colorClasses = "bg-emerald-950/70 border-emerald-500/60 text-emerald-200 hover:bg-emerald-900/80";
+                }
+
+                grid.innerHTML += `
+                    <div onclick="openShiftModal(${day})" class="min-h-[64px] p-1.5 border rounded-lg flex flex-col justify-between cursor-pointer transition relative overflow-hidden ${colorClasses}">
+                        <div class="flex justify-between items-center w-full">
+                            <span class="font-bold text-xs">${day}</span>
+                            ${shiftData.color !== 'none' ? `<span class="w-2 h-2 rounded-full ${shiftData.color === 'yellow' ? 'bg-amber-400' : 'bg-emerald-400'}"></span>` : ''}
+                        </div>
+                        <p class="text-[10px] leading-tight truncate font-mono opacity-90 mt-1">${shiftData.info || ''}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function openShiftModal(day) {
+            selectedDay = day;
+            const modal = document.getElementById('shiftModal');
+            const title = document.getElementById('modalDayTitle');
+            const colorSel = document.getElementById('shiftColorSelect');
+            const infoInput = document.getElementById('shiftInfoInput');
+
+            const current = appData.shifts[day] || { color: 'none', info: '' };
+
+            if (title) title.innerText = `Edit Shift Schedule (Day ${day})`;
+            if (colorSel) colorSel.value = current.color;
+            if (infoInput) infoInput.value = current.info;
+
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeShiftModal() {
+            const modal = document.getElementById('shiftModal');
+            if (modal) modal.classList.add('hidden');
+            selectedDay = null;
+        }
+
+        function saveDayShift() {
+            if (!selectedDay) return;
+            const color = document.getElementById('shiftColorSelect').value;
+            const info = document.getElementById('shiftInfoInput').value;
+
+            appData.shifts[selectedDay] = { color, info };
+            localStorage.setItem('nurse_shifts', JSON.stringify(appData.shifts));
+
+            closeShiftModal();
+            renderCalendar();
+        }
+
+        function clearDayShift() {
+            if (!selectedDay) return;
+            delete appData.shifts[selectedDay];
+            localStorage.setItem('nurse_shifts', JSON.stringify(appData.shifts));
+
+            closeShiftModal();
+            renderCalendar();
+        }
+
+        function saveNote(e) {
+            e.preventDefault();
+            const newNote = {
+                id: Date.now(),
+                patient: document.getElementById('notePatient').value,
+                room: document.getElementById('noteRoom').value,
+                details: document.getElementById('noteDetails').value,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            appData.notes.unshift(newNote);
+            localStorage.setItem('nurse_notes', JSON.stringify(appData.notes));
+            document.getElementById('noteForm').reset();
+            renderNotes();
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notesContainer');
+            if (!container) return;
+            if (appData.notes.length === 0) {
+                container.innerHTML = `<div class="card p-6 rounded-xl text-center text-slate-400 text-sm">No clinical notes recorded yet.</div>`;
+                return;
+            }
+            container.innerHTML = appData.notes.map(note => `
+                <div class="card p-4 rounded-xl shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-white">${note.patient} (Room ${note.room})</span>
+                        <span class="text-xs text-slate-400">${note.timestamp}</span>
+                    </div>
+                    <p class="text-xs text-slate-300">${note.details}</p>
+                    <div class="flex justify-end"><button onclick="deleteNote(${note.id})" class="text-xs text-red-400 hover:text-red-300">Delete</button></div>
+                </div>
+            `).join('');
+        }
+
+        function deleteNote(id) {
+            appData.notes = appData.notes.filter(n => n.id !== id);
+            localStorage.setItem('nurse_notes', JSON.stringify(appData.notes));
+            renderNotes();
+        }
+
+        function saveTask(e) {
+            e.preventDefault();
+            const input = document.getElementById('taskInput');
+            const newTask = { id: Date.now(), text: input.value, priority: document.getElementById('taskPriority').value, done: false };
+            appData.tasks.push(newTask);
+            localStorage.setItem('nurse_tasks', JSON.stringify(appData.tasks));
+            input.value = '';
+            renderTasks();
+        }
+
+        function addPresetTask(text, priority) {
+            const newTask = { id: Date.now(), text: text, priority: priority, done: false };
+            appData.tasks.push(newTask);
+            localStorage.setItem('nurse_tasks', JSON.stringify(appData.tasks));
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            if (!list) return;
+            const badge = document.getElementById('taskBadge');
+            const pending = appData.tasks.filter(t => !t.done).length;
+            if (badge) badge.innerText = pending;
+
+            if (appData.tasks.length === 0) {
+                list.innerHTML = `<li class="p-4 text-center text-xs text-slate-400">No active tasks logged.</li>`;
+                return;
+            }
+            list.innerHTML = appData.tasks.map(task => `
+                <li class="p-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask(${task.id})" class="w-4 h-4 text-teal-600 rounded">
+                        <span class="text-xs ${task.done ? 'line-through text-slate-500' : 'text-slate-200'}">${task.text}</span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${task.priority === 'STAT' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-slate-800 text-slate-300'}">${task.priority}</span>
+                </li>
+            `).join('');
+        }
+
+        function toggleTask(id) {
+            const task = appData.tasks.find(t => t.id === id);
+            if (task) task.done = !task.done;
+            localStorage.setItem('nurse_tasks', JSON.stringify(appData.tasks));
+            renderTasks();
+        }
+
+        function clearCompletedTasks() {
+            appData.tasks = appData.tasks.filter(t => !t.done);
+            localStorage.setItem('nurse_tasks', JSON.stringify(appData.tasks));
+            renderTasks();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderProfileImage();
+            updateDutyUI();
+            renderNotes();
+            renderTasks();
+            renderCalendar();
+            calculateApgar();
+            updateShiftTimer();
+            setInterval(updateShiftTimer, 1000);
+        });
+    </script>
+</body>
+</html>

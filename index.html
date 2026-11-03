@@ -107,6 +107,12 @@
                 <button onclick="switchView('notes')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="notes">
                     <span>Shift Notes & Handover</span>
                 </button>
+                <button onclick="switchView('tally')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="tally">
+                    <span>Procedure Case Tally</span>
+                </button>
+                <button onclick="switchView('instruments')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="instruments">
+                    <span>OR / DR Instruments</span>
+                </button>
                 <button onclick="switchView('tasks')" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800/60 transition text-slate-300 font-medium" data-target="tasks">
                     <span>Priority Tasks</span>
                     <span id="taskBadge" class="bg-amber-500 text-slate-950 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
@@ -120,7 +126,7 @@
             </nav>
 
             <div class="p-4 border-t border-slate-800 text-xs text-center space-y-2 text-slate-400">
-                <p>Personal Duty Log v9.7</p>
+                <p>Personal Duty Log v11.3</p>
                 <div class="flex gap-2 justify-center">
                     <button onclick="exportData()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-teal-400 hover:bg-slate-800">Export Backup</button>
                     <button onclick="document.getElementById('importFile').click()" class="px-2.5 py-1 rounded font-mono border border-slate-700 text-amber-400 hover:bg-slate-800">Import</button>
@@ -255,7 +261,106 @@
                 <div id="notesContainer" class="space-y-3"></div>
             </section>
 
-            <!-- 3. PRIORITY TASKS VIEW -->
+            <!-- 3. PROCEDURE CASE TALLY VIEW -->
+            <section id="view-tally" class="view-section space-y-6 hidden">
+                <div class="card p-5 rounded-xl shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-base font-bold text-white">Procedure Case Tally Log</h3>
+                            <p class="text-xs text-slate-400">Record and track your daily delivery room procedures and surgical cases.</p>
+                        </div>
+                    </div>
+
+                    <!-- Cumulative Tally Summary Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">NSD</p>
+                            <p class="text-lg font-bold text-teal-300 mt-1" id="totalNSD">0</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Cord Case</p>
+                            <p class="text-lg font-bold text-teal-300 mt-1" id="totalCord">0</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">CS</p>
+                            <p class="text-lg font-bold text-amber-300 mt-1" id="totalCS">0</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Major</p>
+                            <p class="text-lg font-bold text-rose-300 mt-1" id="totalMajor">0</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-center col-span-2 sm:col-span-1">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Minor</p>
+                            <p class="text-lg font-bold text-sky-300 mt-1" id="totalMinor">0</p>
+                        </div>
+                    </div>
+
+                    <!-- New Tally Form Entry -->
+                    <form id="tallyForm" onsubmit="saveTally(event)" class="space-y-4 pt-2">
+                        <div>
+                            <label class="text-xs font-semibold block mb-1 text-slate-300">Date of Entry</label>
+                            <input type="date" id="tallyDate" required class="w-full sm:w-1/2 p-2.5 border rounded-lg outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">NSD</label>
+                                <input type="number" id="tallyNSD" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Cord Case</label>
+                                <input type="number" id="tallyCord" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">CS</label>
+                                <input type="number" id="tallyCS" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Major</label>
+                                <input type="number" id="tallyMajor" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1 text-slate-300">Minor</label>
+                                <input type="number" id="tallyMinor" min="0" value="0" class="w-full p-2.5 border rounded-lg outline-none font-bold text-center">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-500 transition text-xs uppercase tracking-wider">
+                            Save Tally Entry
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tally History Log List -->
+                <div class="card rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-3 border-b border-slate-800 flex justify-between items-center">
+                        <h3 class="text-xs font-bold uppercase text-slate-300">Saved Tally Logs History</h3>
+                        <button onclick="clearTallyHistory()" class="text-xs text-slate-400 hover:text-red-400">Clear All</button>
+                    </div>
+                    <div id="tallyHistoryContainer" class="divide-y divide-slate-800"></div>
+                </div>
+            </section>
+
+            <!-- 4. OR / DR INSTRUMENT REFERENCE & SEARCH VIEW -->
+            <section id="view-instruments" class="view-section space-y-6 hidden">
+                <div class="card p-5 rounded-xl shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-white">OR / DR Comprehensive Instrument Reference</h3>
+                            <p class="text-xs text-slate-400">Search over 50 essential delivery room and operating room instruments. Click any instrument to view its clinical photo on Google.</p>
+                        </div>
+                        <!-- Search Bar -->
+                        <div class="w-full sm:w-72">
+                            <input type="text" id="instrumentSearchInput" oninput="renderInstruments()" placeholder="🔍 Search instrument name..." class="w-full p-2.5 border rounded-lg text-xs outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instrument Gallery Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="instrumentGridContainer"></div>
+            </section>
+
+            <!-- 5. PRIORITY TASKS VIEW -->
             <section id="view-tasks" class="view-section space-y-6 hidden">
                 <div class="card p-4 rounded-xl shadow-sm space-y-4">
                     <h3 class="text-base font-bold text-white">Add Duty Task</h3>
@@ -304,7 +409,7 @@
                 </div>
             </section>
 
-            <!-- 4. INTERACTIVE SHIFT SCHEDULE VIEW -->
+            <!-- 6. INTERACTIVE SHIFT SCHEDULE VIEW -->
             <section id="view-calendar" class="view-section space-y-6 hidden">
                 <div class="card p-4 rounded-xl shadow-sm space-y-4">
                     <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -351,7 +456,7 @@
                 </div>
             </section>
 
-            <!-- 5. CALCULATORS VIEW -->
+            <!-- 7. CALCULATORS VIEW -->
             <section id="view-vitals" class="view-section space-y-6 hidden">
                 <div class="card p-4 rounded-xl shadow-sm mb-4">
                     <h3 class="text-base font-bold text-white">Calculators</h3>
@@ -460,32 +565,38 @@
                     </div>
                 </div>
 
-                <!-- Emergency CPR & Code Dosing -->
-                <div class="card p-4 rounded-xl shadow-sm border border-rose-900/40">
-                    <h3 class="text-sm font-bold text-rose-400 mb-3">Emergency Code Dosing Quick-Reference</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-3">
-                        <div>
-                            <label class="font-semibold block mb-1 text-slate-300">Patient Type & Weight</label>
-                            <div class="flex gap-2">
-                                <select id="codePatientType" onchange="toggleCodeWeightInput()" class="p-2 border rounded font-bold w-1/2">
-                                    <option value="adult">Adult (Standard)</option>
-                                    <option value="peds">Pediatric (Weight-based)</option>
-                                </select>
-                                <input type="number" id="codeWeight" placeholder="Weight (kg)" class="p-2 border rounded w-1/2 hidden">
+                <!-- Emergency CPR & Code Dosing (Adult & Pediatric Inputs Side-by-Side) -->
+                <div class="card p-4 rounded-xl shadow-sm border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <h3 class="text-sm font-bold text-teal-400">Emergency Code Dosing Quick-Reference</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <!-- Adult ACLS Box -->
+                        <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800 space-y-2">
+                            <div class="font-bold text-teal-300 border-b border-slate-800 pb-1">Adult ACLS Dosing</div>
+                            <ul class="space-y-1.5 font-mono text-slate-200 text-[11px]">
+                                <li>• <strong>Epinephrine (1:10,000):</strong> 1 mg IV/IO q3-5min</li>
+                                <li>• <strong>Amiodarone:</strong> 300 mg IV push (1st); 150 mg (2nd)</li>
+                                <li>• <strong>Atropine:</strong> 1 mg IV q3-5min (Max 3 mg)</li>
+                                <li>• <strong>Sodium Bicarbonate:</strong> 1 mEq/kg IV</li>
+                            </ul>
+                        </div>
+
+                        <!-- Pediatric PALS Box with Weight Input -->
+                        <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-1">
+                                <span class="font-bold text-teal-300">Pediatric PALS Dosing</span>
+                                <div class="flex items-center space-x-1">
+                                    <span class="text-[10px] text-slate-400">Wt:</span>
+                                    <input type="number" id="codeWeight" min="1" max="100" value="12" oninput="calculateCodeDoses()" class="w-14 p-1 text-center border rounded text-xs font-bold">
+                                    <span class="text-[10px] text-slate-400">kg</span>
+                                </div>
+                            </div>
+                            <div id="pedsCodeResult" class="space-y-1.5 font-mono text-slate-200 text-[11px]">
+                                <!-- Dynamically calculated -->
                             </div>
                         </div>
-                        <div class="flex items-end">
-                            <button onclick="calculateCodeDoses()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded transition">
-                                Calculate Code Doses
-                            </button>
-                        </div>
-                    </div>
-                    <div id="codeResult" class="p-3 rounded text-xs space-y-2 border border-rose-900/60 bg-rose-950/30 text-rose-200">
-                        <div class="font-bold border-b border-rose-800 pb-1">ACLS / PALS Quick Reference:</div>
-                        <ul class="space-y-1 text-[11px] font-mono">
-                            <li>• <strong>Epinephrine (1:10,000):</strong> 1 mg IV/IO push q3-5min</li>
-                            <li>• <strong>Amiodarone:</strong> 300 mg IV push 1st dose; 150 mg 2nd dose</li>
-                        </ul>
                     </div>
                 </div>
 
@@ -547,10 +658,65 @@
         let appData = {
             notes: JSON.parse(localStorage.getItem('nurse_notes')) || [],
             tasks: JSON.parse(localStorage.getItem('nurse_tasks')) || [],
+            tallies: JSON.parse(localStorage.getItem('nurse_tallies')) || [],
             dutyStatus: localStorage.getItem('nurse_duty_status') || 'ON DUTY',
             shifts: JSON.parse(localStorage.getItem('nurse_shifts')) || {},
             profileImage: localStorage.getItem('nurse_profile_image') || null
         };
+
+        // Comprehensive 50+ OR & DR Instruments Master List
+        const masterInstruments = [
+            { name: "Needle Holder (Hegar)", category: "Surgical / OR", desc: "Used for holding suture needles securely during surgical repair of episiotomy or lacerations." },
+            { name: "Mayo Scissors (Straight)", category: "Cutting & Dissecting", desc: "Used for cutting sutures, heavy fascia, and umbilical cords." },
+            { name: "Mayo Scissors (Curved)", category: "Cutting & Dissecting", desc: "Used for dissecting or cutting thick, heavy body tissues." },
+            { name: "Metzenbaum Scissors", category: "Cutting & Dissecting", desc: "Fine scissors used for delicate tissue dissection and delicate organ handling." },
+            { name: "Allis Tissue Forceps", category: "Clamping & Grasping", desc: "Frictional grasping forceps with teeth used for holding edges of tissue or membranes." },
+            { name: "Babcock Forceps", category: "Clamping & Grasping", desc: "Atraumatic grasping forceps used for holding tubular structures or delicate organs like bowels or uterus." },
+            { name: "Kocher / Ochsner Forceps", category: "Clamping & Grasping", desc: "Heavy interlocking clamp with teeth used for gripping tough tissue or clamping bleeding vessels." },
+            { name: "Halstead Mosquito Forceps", category: "Clamping & Grasping", desc: "Small hemostatic forceps used for clamping small blood vessels or delicate tissues." },
+            { name: "Kelly Clamp", category: "Clamping & Grasping", desc: "Medium-sized hemostatic clamp used for clamping larger blood vessels or grasping heavy tissue." },
+            { name: "Crile Clamp", category: "Clamping & Grasping", desc: "Hemostatic forceps with transverse serrations along the entire length of the jaws." },
+            { name: "Ring / Sponge Forceps", category: "Delivery Room", desc: "Used for holding surgical sponges, antiseptic swabs, or grasping placenta and membranes." },
+            { name: "Foerster Sponge Forceps", category: "Delivery Room", desc: "Ring-tipped forceps used to hold sponges or grasp the uterine cervix and membranes." },
+            { name: "Plain Dissecting Forceps (Thumb)", category: "Clamping & Grasping", desc: "Non-toothed forceps used for grasping dressings or delicate tissues without piercing." },
+            { name: "Toothed Dissecting Forceps (Adson)", category: "Clamping & Grasping", desc: "Forceps with small teeth at the tip used for securely grasping skin and tough fascia." },
+            { name: "Richardson Retractor", category: "Retracting", desc: "Handheld surgical retractor used to hold back deep tissue, muscle, or abdominal walls." },
+            { name: "Senn Retractor", category: "Retracting", desc: "Double-ended handheld retractor used for shallow or superficial incisions." },
+            { name: "Deaver Retractor", category: "Retracting", desc: "Large ribbon-like handheld retractor used to deep-retract abdominal or pelvic viscera." },
+            { name: "Army-Navy Retractor", category: "Retracting", desc: "Double-ended handheld retractor used for shallow wound exposure." },
+            { name: "Bozeman Uterine Dressing Forceps", category: "Delivery Room", desc: "S-curved forceps used in obstetrics for packing the uterine cavity or removing placental remnants." },
+            { name: "Simpson Obstetric Forceps", category: "Delivery Room", desc: "Fetal head-traction instrument used during assisted vaginal deliveries." },
+            { name: "Kielland Obstetric Forceps", category: "Delivery Room", desc: "Forceps specifically designed for rotating the fetal head during malposition labor." },
+            { name: "Wilde Uterine Speculum / Vaginal Speculum", category: "Delivery Room", desc: "Used to retract vaginal walls for visualization of the cervix and vaginal vault." },
+            { name: "Auvard Weighted Speculum", category: "Delivery Room", desc: "Heavy self-retaining vaginal speculum used to retract the posterior vaginal wall during procedures." },
+            { name: "Sims Vaginal Speculum", category: "Delivery Room", desc: "Double-bladed speculum used manually for vaginal examinations and surgeries." },
+            { name: "Tischler Biopsy Punch", category: "Surgical / OR", desc: "Used for taking targeted cervical tissue biopsies during colposcopy." },
+            { name: "Uterine Sound", category: "Delivery Room", desc: "Calibrated probe inserted into the uterus to measure depth and position." },
+            { name: "Hegar Uterine Dilators", category: "Surgical / OR", desc: "Graduated cylindrical metal rods used to dilate the cervical os during D&C procedures." },
+            { name: "Goodell Uterine Dilator", category: "Surgical / OR", desc: "Instrument with expanding blades used for rapid cervical dilation." },
+            { name: "Skene Needle Holder", category: "Surgical / OR", desc: "Specialized needle holder used in vaginal and perineal repairs." },
+            { name: "Episiotomy Scissors (Braun/Schreiber)", category: "Delivery Room", desc: "Angled surgical scissors specifically designed to perform episiotomy during childbirth." },
+            { name: "Umbilical Cord Scissors", category: "Delivery Room", desc: "Sturdy scissors designed specifically for cleanly cutting the newborn's umbilical cord." },
+            { name: "Umbilical Cord Clamp Applier", category: "Delivery Room", desc: "Plastic or metal clamp applier used to secure the umbilical cord clamp tightly." },
+            { name: "Suction Cannula (Yankauer)", category: "Surgical / OR", desc: "Oral suction tip used to clear surgical fluids, amniotic fluid, or mucus." },
+            { name: "Poole Suction Tube", category: "Surgical / OR", desc: "Multi-hole suction cannula used for clearing large volumes of fluid from the abdominal cavity." },
+            { name: "Backhouse Towel Clamp", category: "Surgical / OR", desc: "Perforating clamp used to secure surgical drapes and suction tubing to fields." },
+            { name: "Backus Towel Clamp (Non-perforating)", category: "Surgical / OR", desc: "Non-perforating clamp used for securing drapes without puncturing." },
+            { name: "Scalpel Handle No. 3", category: "Cutting & Dissecting", desc: "Standard handle used to hold smaller surgical blades (e.g., #10, #11, #15) for precise incisions." },
+            { name: "Scalpel Handle No. 4", category: "Cutting & Dissecting", desc: "Larger handle used for holding heavy surgical blades (e.g., #20) for deeper incisions." },
+            { name: "Mayo-Hegar Needle Holder", category: "Surgical / OR", desc: "Heavy needle holder with cross-scored jaws for secure handling of large needles." },
+            { name: "Castroviejo Needle Holder", category: "Surgical / OR", desc: "Delicate spring-loaded needle holder used for micro-suturing and fine plastic repairs." },
+            { name: "Parametrium Clamp (Heaney)", category: "Surgical / OR", desc: "Curved heavy clamp used in gynecological surgeries to clamp cardinal and uterosacral ligaments." },
+            { name: "Pean Hemostatic Forceps", category: "Clamping & Grasping", desc: "Large hemostatic clamp with transverse serrations for clamping large tissue bundles or vessels." },
+            { name: "Mixter Right Angle Clamp", category: "Clamping & Grasping", desc: "Right-angle jaw clamp used for dissection and passing ties around deep vessels." },
+            { name: "Moynihan Cholecystectomy Clamp", category: "Surgical / OR", desc: "Curved heavy clamp used in biliary and deep abdominal surgeries." },
+            { name: "Doyen Intestinal Clamp", category: "Surgical / OR", desc: "Atraumatic long flexible clamp used to occlude bowel loops during surgery." },
+            { name: "Bozeman Needle Holder", category: "Surgical / OR", desc: "Long-handled needle holder designed for deep cavity or vaginal vault suturing." },
+            { name: "Schroeder Tenaculum Forceps", category: "Delivery Room", desc: "Single-tooth sharp hook forceps used to grasp and stabilize the cervix." },
+            { name: "Jarcho Uterine Cannula", category: "Surgical / OR", desc: "Uterine manipulator used during tubal patency tests and gynecological procedures." },
+            { name: "Bipolar Coagulation Forceps", category: "Surgical / OR", desc: "Electrosurgical forceps used for precise hemostasis and vessel sealing." },
+            { name: "Monopolar Electrosurgical Pencil", category: "Surgical / OR", desc: "Handpiece used for cutting and coagulation via high-frequency electrical current." }
+        ];
 
         let selectedDay = null;
 
@@ -586,6 +752,126 @@
                     sidebarAvatar.innerText = '';
                 }
             }
+        }
+
+        /* --- OR / DR INSTRUMENTS SEARCH & GOOGLE PHOTO LINK LOGIC --- */
+        function renderInstruments() {
+            const container = document.getElementById('instrumentGridContainer');
+            const searchInput = document.getElementById('instrumentSearchInput');
+            if (!container) return;
+
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+            
+            const filtered = masterInstruments.filter(inst => 
+                inst.name.toLowerCase().includes(query) || 
+                inst.category.toLowerCase().includes(query) || 
+                inst.desc.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full card p-6 text-center text-xs text-slate-400">No matching instruments found. Try searching another term.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(inst => {
+                const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(inst.name + " surgical instrument medical")}&tbm=isch`;
+                return `
+                    <div class="card rounded-xl shadow-md p-4 flex flex-col justify-between border border-slate-800 space-y-3">
+                        <div>
+                            <div class="flex justify-between items-start gap-2">
+                                <h4 class="font-bold text-white text-sm leading-snug">${inst.name}</h4>
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800 shrink-0">${inst.category}</span>
+                            </div>
+                            <p class="text-xs text-slate-300 mt-2">${inst.desc}</p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800 flex justify-end">
+                            <a href="${googleSearchUrl}" target="_blank" class="w-full text-center bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-semibold py-2 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+                                🔍 View Photo on Google
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* --- CASE TALLY LOGIC --- */
+        function saveTally(e) {
+            e.preventDefault();
+            const newTally = {
+                id: Date.now(),
+                date: document.getElementById('tallyDate').value || new Date().toISOString().split('T')[0],
+                nsd: parseInt(document.getElementById('tallyNSD').value) || 0,
+                cord: parseInt(document.getElementById('tallyCord').value) || 0,
+                cs: parseInt(document.getElementById('tallyCS').value) || 0,
+                major: parseInt(document.getElementById('tallyMajor').value) || 0,
+                minor: parseInt(document.getElementById('tallyMinor').value) || 0
+            };
+
+            appData.tallies.unshift(newTally);
+            localStorage.setItem('nurse_tallies', JSON.stringify(appData.tallies));
+            
+            document.getElementById('tallyNSD').value = 0;
+            document.getElementById('tallyCord').value = 0;
+            document.getElementById('tallyCS').value = 0;
+            document.getElementById('tallyMajor').value = 0;
+            document.getElementById('tallyMinor').value = 0;
+
+            renderTallies();
+        }
+
+        function deleteTally(id) {
+            appData.tallies = appData.tallies.filter(t => t.id !== id);
+            localStorage.setItem('nurse_tallies', JSON.stringify(appData.tallies));
+            renderTallies();
+        }
+
+        function clearTallyHistory() {
+            if (confirm("Are you sure you want to clear all tally history?")) {
+                appData.tallies = [];
+                localStorage.removeItem('nurse_tallies');
+                renderTallies();
+            }
+        }
+
+        function renderTallies() {
+            const container = document.getElementById('tallyHistoryContainer');
+            if (!container) return;
+
+            let sumNSD = 0, sumCord = 0, sumCS = 0, sumMajor = 0, sumMinor = 0;
+            appData.tallies.forEach(t => {
+                sumNSD += t.nsd;
+                sumCord += t.cord;
+                sumCS += t.cs;
+                sumMajor += t.major;
+                sumMinor += t.minor;
+            });
+
+            document.getElementById('totalNSD').innerText = sumNSD;
+            document.getElementById('totalCord').innerText = sumCord;
+            document.getElementById('totalCS').innerText = sumCS;
+            document.getElementById('totalMajor').innerText = sumMajor;
+            document.getElementById('totalMinor').innerText = sumMinor;
+
+            if (appData.tallies.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No procedure tallies logged yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = appData.tallies.map(t => `
+                <div class="p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <span class="font-bold text-teal-400 text-xs font-mono">📅 ${t.date}</span>
+                        <div class="flex flex-wrap gap-2 mt-1 text-[11px] font-mono text-slate-300">
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">NSD: <strong>${t.nsd}</strong></span>
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Cord: <strong>${t.cord}</strong></span>
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">CS: <strong>${t.cs}</strong></span>
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Major: <strong>${t.major}</strong></span>
+                            <span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Minor: <strong>${t.minor}</strong></span>
+                        </div>
+                    </div>
+                    <button onclick="deleteTally(${t.id})" class="text-xs text-red-400 hover:text-red-300 self-end sm:self-center">Delete</button>
+                </div>
+            `).join('');
         }
 
         /* --- APGAR CALCULATOR LOGIC --- */
@@ -739,45 +1025,22 @@
         }
 
         /* --- EMERGENCY CODE DOSING LOGIC --- */
-        function toggleCodeWeightInput() {
-            const type = document.getElementById('codePatientType').value;
-            const wInput = document.getElementById('codeWeight');
-            if (type === 'peds') {
-                wInput.classList.remove('hidden');
-            } else {
-                wInput.classList.add('hidden');
-            }
-        }
-
         function calculateCodeDoses() {
-            const type = document.getElementById('codePatientType').value;
-            const res = document.getElementById('codeResult');
-            
-            if (type === 'adult') {
-                res.innerHTML = `
-                    <div class="font-bold border-b border-rose-800 pb-1">Adult ACLS Dosing Summary:</div>
-                    <ul class="space-y-1 text-[11px] font-mono mt-1">
-                        <li>• <strong>Epinephrine (1:10,000):</strong> 1 mg IV/IO push q3-5min</li>
-                        <li>• <strong>Amiodarone:</strong> 300 mg IV push 1st dose; 150 mg 2nd dose</li>
-                    </ul>
-                `;
-            } else {
-                const w = parseFloat(document.getElementById('codeWeight').value);
-                if (!w) {
-                    res.innerHTML = `<div class="text-rose-400 font-bold">Please enter child weight in kg.</div>`;
-                    return;
-                }
-                const epiMg = (w * 0.01).toFixed(2);
-                const amioMg = (w * 5).toFixed(1);
+            const w = parseFloat(document.getElementById('codeWeight').value) || 12;
+            const pedsRes = document.getElementById('pedsCodeResult');
+            if (!pedsRes) return;
 
-                res.innerHTML = `
-                    <div class="font-bold border-b border-rose-800 pb-1">Pediatric PALS Dosing (${w} kg):</div>
-                    <ul class="space-y-1 text-[11px] font-mono mt-1">
-                        <li>• <strong>Epinephrine (1:10,000):</strong> ${epiMg} mg IV/IO q3-5min</li>
-                        <li>• <strong>Amiodarone:</strong> ${amioMg} mg IV/IO push (5 mg/kg)</li>
-                    </ul>
-                `;
-            }
+            const epiMg = (w * 0.01).toFixed(2);
+            const amioMg = (w * 5).toFixed(1);
+            const atropineMg = Math.max(0.1, (w * 0.02)).toFixed(2);
+            const bicarbMeq = (w * 1).toFixed(1);
+
+            pedsRes.innerHTML = `
+                <div>• <strong>Epi (0.01 mg/kg):</strong> ${epiMg} mg (1:10,000) q3-5min</div>
+                <div>• <strong>Amiodarone (5 mg/kg):</strong> ${amioMg} mg IV/IO push</div>
+                <div>• <strong>Atropine (0.02 mg/kg):</strong> ${atropineMg} mg IV</div>
+                <div>• <strong>Sodium Bicarb (1 mEq/kg):</strong> ${bicarbMeq} mEq IV</div>
+            `;
         }
 
         /* --- FLUID BALANCE CALCULATOR LOGIC --- */
@@ -999,12 +1262,20 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            const tallyDateInput = document.getElementById('tallyDate');
+            if (tallyDateInput) {
+                tallyDateInput.value = new Date().toISOString().split('T')[0];
+            }
+
             renderProfileImage();
             updateDutyUI();
             renderNotes();
+            renderTallies();
+            renderInstruments();
             renderTasks();
             renderCalendar();
             calculateApgar();
+            calculateCodeDoses();
             updateShiftTimer();
             setInterval(updateShiftTimer, 1000);
         });
